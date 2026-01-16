@@ -5,63 +5,96 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Доступ к опросу</title>
   <style>
-    :root { color-scheme: dark light; }
     body{
-      margin:0; min-height:100vh; display:grid; place-items:center;
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:24px;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      background: radial-gradient(1200px 800px at 30% 20%, #153a2a 0%, #0b1512 45%, #060a09 100%);
-      color: #e9f3ee;
-      padding: 24px;
+      background:#ffffff;       /* чисто белый фон */
+      color:#111827;
     }
     .card{
-      width:100%; max-width: 440px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(8, 16, 12, .55);
-      backdrop-filter: blur(8px);
-      border-radius: 18px;
-      padding: 18px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+      width:100%;
+      max-width:440px;
+      border:1px solid #e5e7eb;
+      background:#ffffff;
+      border-radius:16px;
+      padding:18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.08);
     }
-    h1{ margin:0; font-size: 18px; font-weight: 650; letter-spacing: .2px;}
-    p{ margin:10px 0 0; opacity: .85; line-height: 1.35;}
-    form{ margin-top: 14px; display:grid; gap: 12px; }
+    h1{
+      margin:0;
+      font-size:18px;
+      font-weight:650;
+      letter-spacing:.2px;
+    }
+    p{
+      margin:10px 0 0;
+      color:#374151;
+      line-height:1.35;
+    }
+    form{
+      margin-top:14px;
+      display:grid;
+      gap:12px;
+    }
     input{
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.25);
-      color: inherit;
-      font-size: 16px;
-      outline: none;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid #d1d5db;
+      background:#ffffff;
+      color:#111827;
+      font-size:16px;
+      outline:none;
     }
-    input:focus{ border-color: rgba(110, 231, 183, .55); }
+    input:focus{
+      border-color:#6b7280;
+      box-shadow: 0 0 0 3px rgba(107,114,128,.15);
+    }
     button{
-      padding: 12px 14px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(135deg, rgba(110,231,183,.9), rgba(34,197,94,.75));
-      color: #062011;
-      font-weight: 700;
-      font-size: 16px;
-      cursor: pointer;
+      padding:12px 14px;
+      border-radius:12px;
+      border:none;
+      background:#111827;
+      color:#ffffff;
+      font-weight:700;
+      font-size:16px;
+      cursor:pointer;
     }
-    button:disabled{ opacity: .6; cursor: not-allowed; }
+    button:disabled{
+      opacity:.65;
+      cursor:not-allowed;
+    }
     .msg{
-      margin-top: 12px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.25);
-      font-size: 14px;
-      line-height: 1.35;
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      font-size:14px;
+      line-height:1.35;
+      color:#111827;
     }
-    .muted{ opacity: .7; font-size: 12px; margin-top: 14px; }
-    .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px; }
+    .muted{
+      opacity:.75;
+      font-size:12px;
+      margin-top:14px;
+      color:#374151;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+    }
     .link{
-      color: rgba(110,231,183,.95);
-      text-decoration: none;
-      font-size: 12px;
-      opacity: .9;
+      color:#111827;
+      text-decoration:underline;
+      font-size:12px;
+      opacity:.85;
     }
   </style>
 </head>
@@ -89,7 +122,7 @@
     </div>
 
     <p class="muted">
-      Примечание: “запрет повторов” в этом варианте работает только в рамках данного устройства/браузера (localStorage).
+      Примечание: запрет повторного ввода работает на этом устройстве/в этом браузере (localStorage).
     </p>
   </main>
 
@@ -99,8 +132,8 @@
   const SURVEY_BASE = "https://interviewingap.nfieldmr.com/Interviews/2qBTg/lBeuaKI1LRS4mvovyDdm";
   const COUNTRY_INPUT = "KAZAKHSTAN";
 
-  // Если нужно РОВНО N цифр — укажите число (например 8). Если не нужно — поставьте null.
-  const CODE_LENGTH = 8; // <-- измените при необходимости (или null)
+  // РОВНО N цифр — укажите число (например 8). Если не нужно — поставьте null.
+  const CODE_LENGTH = 8;
 
   // Локальное хранилище использованных кодов (на этом устройстве)
   const STORAGE_KEY = "nfield_used_codes_v1";
@@ -198,8 +231,7 @@
     used.push(code);
     saveUsed(used);
 
-    const url = buildRedirectUrl(code);
-    window.location.href = url;
+    window.location.href = buildRedirectUrl(code);
   });
 
   resetEl.addEventListener("click", (e) => {
