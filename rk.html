@@ -12,7 +12,7 @@
       place-items:center;
       padding:24px;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-      background:#ffffff;       /* чисто белый фон */
+      background:#ffffff;
       color:#111827;
     }
     .card{
@@ -24,22 +24,9 @@
       padding:18px;
       box-shadow: 0 10px 30px rgba(0,0,0,.08);
     }
-    h1{
-      margin:0;
-      font-size:18px;
-      font-weight:650;
-      letter-spacing:.2px;
-    }
-    p{
-      margin:10px 0 0;
-      color:#374151;
-      line-height:1.35;
-    }
-    form{
-      margin-top:14px;
-      display:grid;
-      gap:12px;
-    }
+    h1{ margin:0; font-size:18px; font-weight:650; letter-spacing:.2px; }
+    p{ margin:10px 0 0; color:#374151; line-height:1.35; }
+    form{ margin-top:14px; display:grid; gap:12px; }
     input{
       padding:12px 14px;
       border-radius:12px;
@@ -63,10 +50,6 @@
       font-size:16px;
       cursor:pointer;
     }
-    button:disabled{
-      opacity:.65;
-      cursor:not-allowed;
-    }
     .msg{
       margin-top:12px;
       padding:10px 12px;
@@ -76,26 +59,11 @@
       font-size:14px;
       line-height:1.35;
       color:#111827;
+      display:none;
     }
-    .muted{
-      opacity:.75;
-      font-size:12px;
-      margin-top:14px;
-      color:#374151;
-    }
-    .row{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      justify-content:space-between;
-      margin-top:10px;
-    }
-    .link{
-      color:#111827;
-      text-decoration:underline;
-      font-size:12px;
-      opacity:.85;
-    }
+    .muted{ opacity:.75; font-size:12px; margin-top:14px; color:#374151; }
+    .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px; }
+    .link{ color:#111827; text-decoration:underline; font-size:12px; opacity:.85; }
   </style>
 </head>
 <body>
@@ -108,13 +76,13 @@
         id="code"
         inputmode="numeric"
         autocomplete="one-time-code"
-        placeholder="Например: 12345678"
+        placeholder="Например: 10010"
         aria-label="Код доступа"
       />
-      <button id="btn" type="submit">Продолжить</button>
+      <button type="submit">Продолжить</button>
     </form>
 
-    <div id="msg" class="msg" style="display:none;"></div>
+    <div id="msg" class="msg"></div>
 
     <div class="row">
       <a class="link" href="#" id="reset">Сбросить локальные коды</a>
@@ -128,21 +96,17 @@
 
 <script>
 (() => {
-  // === НАСТРОЙКИ ===
   const SURVEY_BASE = "https://interviewingap.nfieldmr.com/Interviews/2qBTg/lBeuaKI1LRS4mvovyDdm";
   const COUNTRY_INPUT = "KAZAKHSTAN";
 
-  // РОВНО N цифр — укажите число (например 8). Если не нужно — поставьте null.
-  const CODE_LENGTH = 8;
+  // Любая длина -> null (мы просто проверяем "только цифры")
+  const CODE_LENGTH = null;
 
-  // Локальное хранилище использованных кодов (на этом устройстве)
   const STORAGE_KEY = "nfield_used_codes_v1";
 
-  // === DOM ===
   const form = document.getElementById("form");
   const codeEl = document.getElementById("code");
   const msgEl  = document.getElementById("msg");
-  const hintEl = document.getElementById("hint");
   const resetEl = document.getElementById("reset");
   const countEl = document.getElementById("count");
 
@@ -192,17 +156,12 @@
     return u.toString();
   }
 
-  // UX: фильтруем ввод (оставляем только цифры)
+  // Оставляем в поле только цифры (вырезаем пробелы/буквы/знаки)
   codeEl.addEventListener("input", () => {
     hideMsg();
     const filtered = (codeEl.value || "").replace(/[^\d]/g, "");
     if (filtered !== codeEl.value) codeEl.value = filtered;
   });
-
-  // Подсказка по длине
-  hintEl.textContent = (CODE_LENGTH === null)
-    ? "Введите код (только цифры)."
-    : `Введите код: ровно ${CODE_LENGTH} цифр.`;
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -211,23 +170,16 @@
     const code = (codeEl.value || "").trim();
 
     if (!isValidCode(code)) {
-      showMsg(
-        (CODE_LENGTH === null)
-          ? "Некорректный код. Разрешены только цифры."
-          : `Некорректный код. Нужно ровно ${CODE_LENGTH} цифр.`
-      );
+      showMsg("Некорректный код. Разрешены только цифры.");
       return;
     }
 
     const used = loadUsed();
-
-    // Запрет повторов на этом устройстве
     if (used.includes(code)) {
       showMsg("Этот код уже использован на этом устройстве. Введите другой код.");
       return;
     }
 
-    // Помечаем как использованный и редиректим
     used.push(code);
     saveUsed(used);
 
