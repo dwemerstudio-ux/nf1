@@ -99,7 +99,7 @@
   const SURVEY_BASE = "https://interviewingap.nfieldmr.com/Interviews/2qBTg/lBeuaKI1LRS4mvovyDdm";
   const COUNTRY_INPUT = "KAZAKHSTAN";
 
-  // Любая длина -> null (мы просто проверяем "только цифры")
+  
   const CODE_LENGTH = null;
 
   const STORAGE_KEY = "nfield_used_codes_v1";
@@ -156,7 +156,6 @@
     return u.toString();
   }
 
-  // Оставляем в поле только цифры (вырезаем пробелы/буквы/знаки)
   codeEl.addEventListener("input", () => {
     hideMsg();
     const filtered = (codeEl.value || "").replace(/[^\d]/g, "");
