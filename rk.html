@@ -1,69 +1,216 @@
 <!doctype html>
-<html>
+<html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RespondentKey</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Доступ к опросу</title>
   <style>
-    body{font-family:Arial, sans-serif; padding:16px; max-width:520px; margin:0 auto;}
-    input,button{width:100%; font-size:20px; padding:12px; box-sizing:border-box;}
-    button{margin-top:10px;}
-    .hint{margin-top:10px; color:#555; font-size:14px; word-break:break-all;}
+    :root { color-scheme: dark light; }
+    body{
+      margin:0; min-height:100vh; display:grid; place-items:center;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: radial-gradient(1200px 800px at 30% 20%, #153a2a 0%, #0b1512 45%, #060a09 100%);
+      color: #e9f3ee;
+      padding: 24px;
+    }
+    .card{
+      width:100%; max-width: 440px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(8, 16, 12, .55);
+      backdrop-filter: blur(8px);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    h1{ margin:0; font-size: 18px; font-weight: 650; letter-spacing: .2px;}
+    p{ margin:10px 0 0; opacity: .85; line-height: 1.35;}
+    form{ margin-top: 14px; display:grid; gap: 12px; }
+    input{
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.25);
+      color: inherit;
+      font-size: 16px;
+      outline: none;
+    }
+    input:focus{ border-color: rgba(110, 231, 183, .55); }
+    button{
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, rgba(110,231,183,.9), rgba(34,197,94,.75));
+      color: #062011;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:disabled{ opacity: .6; cursor: not-allowed; }
+    .msg{
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .muted{ opacity: .7; font-size: 12px; margin-top: 14px; }
+    .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px; }
+    .link{
+      color: rgba(110,231,183,.95);
+      text-decoration: none;
+      font-size: 12px;
+      opacity: .9;
+    }
   </style>
 </head>
 <body>
-  <h2>Введите RespondentKey</h2>
+  <main class="card">
+    <h1>Доступ к опросу</h1>
+    <p id="hint">Введите код (только цифры).</p>
 
-  <input id="rk" type="text" placeholder="XXXXX"
-         autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"
-         inputmode="text">
+    <form id="form" autocomplete="off" novalidate>
+      <input
+        id="code"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        placeholder="Например: 12345678"
+        aria-label="Код доступа"
+      />
+      <button id="btn" type="submit">Продолжить</button>
+    </form>
 
-  <button id="go">Открыть анкету</button>
+    <div id="msg" class="msg" style="display:none;"></div>
 
-  <div class="hint" id="preview"></div>
+    <div class="row">
+      <a class="link" href="#" id="reset">Сбросить локальные коды</a>
+      <span class="muted" id="count"></span>
+    </div>
 
-  <script>
-    (function () {
-      var PREFIX = "https://interviewingap.nfieldmr.com/Interviews/qrFl7/QBsH6aLsS2FUjEJMFXaP?RespondentKey=";
-      var SUFFIX = "&pnl=CNT01&panelas=LFP01";
+    <p class="muted">
+      Примечание: “запрет повторов” в этом варианте работает только в рамках данного устройства/браузера (localStorage).
+    </p>
+  </main>
 
-      var rk = document.getElementById("rk");
-      var go = document.getElementById("go");
-      var preview = document.getElementById("preview");
+<script>
+(() => {
+  // === НАСТРОЙКИ ===
+  const SURVEY_BASE = "https://interviewingap.nfieldmr.com/Interviews/2qBTg/lBeuaKI1LRS4mvovyDdm";
+  const COUNTRY_INPUT = "KAZAKHSTAN";
 
-      try {
-        var saved = localStorage.getItem("lastRespondentKey");
-        if (saved) rk.value = saved;
-      } catch (e) {}
+  // Если нужно РОВНО N цифр — укажите число (например 8). Если не нужно — поставьте null.
+  const CODE_LENGTH = 8; // <-- измените при необходимости (или null)
 
-      function buildUrl(key) {
-        return PREFIX + encodeURIComponent(key) + SUFFIX;
-      }
+  // Локальное хранилище использованных кодов (на этом устройстве)
+  const STORAGE_KEY = "nfield_used_codes_v1";
 
-      function updatePreview() {
-        var key = rk.value || "";
-        preview.textContent = key ? ("Ссылка: " + buildUrl(key)) : "";
-      }
+  // === DOM ===
+  const form = document.getElementById("form");
+  const codeEl = document.getElementById("code");
+  const msgEl  = document.getElementById("msg");
+  const hintEl = document.getElementById("hint");
+  const resetEl = document.getElementById("reset");
+  const countEl = document.getElementById("count");
 
-      function openSurvey() {
-        var key = (rk.value || "").replace(/^\s+|\s+$/g, "");
-        if (!key) { rk.focus(); return; }
+  function showMsg(text) {
+    msgEl.textContent = text;
+    msgEl.style.display = "block";
+  }
+  function hideMsg() {
+    msgEl.style.display = "none";
+    msgEl.textContent = "";
+  }
 
-        try { localStorage.setItem("lastRespondentKey", key); } catch (e) {}
-        window.location.href = buildUrl(key);
-      }
+  function loadUsed() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  }
+  function saveUsed(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    updateCount();
+  }
+  function updateCount() {
+    const used = loadUsed();
+    countEl.textContent = used.length ? `Локально использовано: ${used.length}` : "";
+  }
 
-      rk.onkeyup = function (e) {
-        e = e || window.event;
-        updatePreview();
-        if (e.keyCode === 13) openSurvey(); // Enter
-      };
+  function onlyDigits(str) {
+    return /^\d+$/.test(str);
+  }
 
-      go.onclick = openSurvey;
-      updatePreview();
-      rk.focus();
-      rk.select();
-    })();
-  </script>
+  function isValidCode(code) {
+    if (!code) return false;
+    if (!onlyDigits(code)) return false;
+    if (CODE_LENGTH !== null && code.length !== CODE_LENGTH) return false;
+    return true;
+  }
+
+  function buildRedirectUrl(code) {
+    const u = new URL(SURVEY_BASE);
+    u.searchParams.set("RespondentKey", code);
+    u.searchParams.set("COUNTRY_INPUT", COUNTRY_INPUT);
+    return u.toString();
+  }
+
+  // UX: фильтруем ввод (оставляем только цифры)
+  codeEl.addEventListener("input", () => {
+    hideMsg();
+    const filtered = (codeEl.value || "").replace(/[^\d]/g, "");
+    if (filtered !== codeEl.value) codeEl.value = filtered;
+  });
+
+  // Подсказка по длине
+  hintEl.textContent = (CODE_LENGTH === null)
+    ? "Введите код (только цифры)."
+    : `Введите код: ровно ${CODE_LENGTH} цифр.`;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    hideMsg();
+
+    const code = (codeEl.value || "").trim();
+
+    if (!isValidCode(code)) {
+      showMsg(
+        (CODE_LENGTH === null)
+          ? "Некорректный код. Разрешены только цифры."
+          : `Некорректный код. Нужно ровно ${CODE_LENGTH} цифр.`
+      );
+      return;
+    }
+
+    const used = loadUsed();
+
+    // Запрет повторов на этом устройстве
+    if (used.includes(code)) {
+      showMsg("Этот код уже использован на этом устройстве. Введите другой код.");
+      return;
+    }
+
+    // Помечаем как использованный и редиректим
+    used.push(code);
+    saveUsed(used);
+
+    const url = buildRedirectUrl(code);
+    window.location.href = url;
+  });
+
+  resetEl.addEventListener("click", (e) => {
+    e.preventDefault();
+    localStorage.removeItem(STORAGE_KEY);
+    updateCount();
+    showMsg("Локальный список использованных кодов очищен.");
+  });
+
+  updateCount();
+})();
+</script>
 </body>
 </html>
